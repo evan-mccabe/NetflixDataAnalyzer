@@ -1,44 +1,109 @@
 #!/usr/bin/env python3
 
 import pandas as pd
+import matplotlib.pylab as chart
+from collections import Counter
+
 
 #Ask user for data filename
-fn=input("What is the name of the viewing data file youd like to analyze? (Please use name.csv format) \n")
+fn=input("What is the name of the viewing data file you'd like to analyze? (Please use name.csv format) \n")
 
 #Read file
 data=pd.read_csv(fn)
 
-#Convert "Start time" to date time
+###########################
 
-data["Start Time"] = pd.to_datetime(data['Start Time'], utc=True)
+#Function for total time watched for one show
+def watchtime(file):
+    
+    #Convert "Start time" to date time
 
-data = data.set_index("Start Time")
+    file["Start Time"] = pd.to_datetime(file['Start Time'], utc=True)
 
-#Convert datetime to US/Eastern time
+    file = file.set_index("Start Time")
 
-data.index = data.index.tz_convert("US/Eastern")
+    #Convert datetime to US/Eastern time
 
-data = data.reset_index() 
+    file.index = file.index.tz_convert("US/Eastern")
 
-#Convert Duration to timedelta
+    file = file.reset_index() 
 
-data["Duration"]= pd.to_timedelta(data["Duration"])
+    #Convert Duration to timedelta
 
-#Ask user for the show they'd like to use
+    file["Duration"]= pd.to_timedelta(file["Duration"])
 
-sn=input("What is the full name of the show you'd like to analyze?\n")
+    #Ask user for the show they'd like to use
 
-#Find the show name in the csv file
+    sn=input("What is the full name of the show you'd like to analyze?\n")
 
-show = data[data["Title"].str.contains(sn,regex=False)]
+    #Find the show name in the csv file
 
-#Get rid of short view times which were added to the data from watching previews
+    show = file[file["Title"].str.contains(sn,regex=False)]
 
-show=show[(show["Duration"]>"0 days 00:01:00")]
+    #Get rid of short view times which were added to the data from watching previews
 
-#Get final sum of total time watched
+    show=show[(show["Duration"]>"0 days 00:01:00")]
 
-totaltime=show["Duration"].sum()
+    #Get final sum of total time watched
 
-print("You have watched "+sn+" for a total of "+str(totaltime)+ " (hours, minutes, seconds)")
+    totaltime=show["Duration"].sum()
+
+    print("You have watched "+sn+" for a total of "+str(totaltime)+ " (hours, minutes, seconds).\n\n")
+    
+###########################
+
+#Function for number of tv episodes/movies watched by device type
+def device_type(file):
+    
+    #Find number of episodes/movies watched by device type
+    shows=dict(Counter(file["Device Type"]))
+    
+    #Plot data
+    keys = shows.keys()
+    values = shows.values()
+    chart.bar(keys,values)
+    chart.xlabel("Device Type")
+    chart.ylabel("# of episodes/movies watched")
+    chart.show()
+    
+###########################
+    
+#Function for number of tv episodes/movies watched by profile name
+def profiles(file):
+    
+    #Find number of episodes/movies watched by profile
+    shows=dict(Counter(file["Profile Name"]))
+    
+    #Plot data
+    keys = shows.keys()
+    values = shows.values()
+    chart.bar(keys,values)
+    chart.xlabel("Profile Name")
+    chart.ylabel("# of episodes/movies watched")
+    chart.show()
+    
+###########################
+    
+#User selection loop
+end=1
+while (end!=0):
+    
+    output=int(input("Would you like to find the total time you've watched a single show (1), the number of tv episodes/movies watched by device type (2), or the number of tv episodes/movies watched by profile (3)\n"))
+    
+    if output==1:
+        watchtime(data)
+    if output==2:
+        device_type(data)
+    if output==3:
+        profiles(data)
+    
+    #Loop exit
+    end=int(input("Would you like to perform another analyis (1 for yes, 0 for no)\n"))
+
+        
+    
+
+
+
+
 
